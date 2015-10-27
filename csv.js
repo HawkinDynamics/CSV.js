@@ -1,4 +1,4 @@
-(function(root, factory) {
+(function (root, factory) {
   if (typeof define === "function" && define.amd) {
     define([], factory);
   } else if (typeof module === "object" && module.exports) {
@@ -6,22 +6,24 @@
   } else {
     root.CSV = factory();
   }
-}(this, function() {
-  'use strict';
+})(this, function () {
+  "use strict";
 
-  var ESCAPE_DELIMITERS = ['|', '^'],
-      CELL_DELIMITERS = [',', ';', '\t', '|', '^'],
-      LINE_DELIMITERS = ['\r\n', '\r', '\n'];
+  var ESCAPE_DELIMITERS = ["|", "^"],
+    CELL_DELIMITERS = [",", ";", "\t", "|", "^"],
+    LINE_DELIMITERS = ["\r\n", "\r", "\n"];
 
   function isObject(object) {
     var type = typeof object;
-    return type === 'function' || type === 'object' && !!object;
+    return type === "function" || (type === "object" && !!object);
   }
-  var isArray = Array.isArray || function(object) {
-    return toString.call(object) === '[object Array]';
-  }
+  var isArray =
+    Array.isArray ||
+    function (object) {
+      return toString.call(object) === "[object Array]";
+    };
   function isString(object) {
-    return typeof object === 'string';
+    return typeof object === "string";
   }
   function isNumber(object) {
     return !isNaN(Number(object));
@@ -47,20 +49,20 @@
   }
 
   function sanitizeString(string) {
-    return string.replace(/"/g,'\\"');
+    return string.replace(/"/g, '\\"');
   }
 
   function buildCell(index) {
-    return 'attrs[' + index + ']';
+    return "attrs[" + index + "]";
   }
 
   function castCell(value, index) {
     if (isNumber(value)) {
-      return 'Number(' + buildCell(index) + ')';
+      return "Number(" + buildCell(index) + ")";
     } else if (isBoolean(value)) {
-      return 'Boolean(' + buildCell(index) + ' == true)';
+      return "Boolean(" + buildCell(index) + " == true)";
     } else {
-      return 'String(' + buildCell(index) + ')';
+      return "String(" + buildCell(index) + ")";
     }
   }
 
@@ -69,78 +71,95 @@
     if (arguments.length == 3) {
       if (cast) {
         if (isArray(cast)) {
-          forEach(values, function(value, index) {
+          forEach(values, function (value, index) {
             if (isString(cast[index])) {
               cast[index] = cast[index].toLowerCase();
             } else {
               deserialize[cast[index]] = cast[index];
             }
-            definition.push('deserialize[cast[' + index + ']](' + buildCell(index) + ')');
+            definition.push(
+              "deserialize[cast[" + index + "]](" + buildCell(index) + ")"
+            );
           });
         } else {
-          forEach(values, function(value, index) {
+          forEach(values, function (value, index) {
             definition.push(castCell(value, index));
           });
         }
       } else {
-        forEach(values, function(value, index) {
+        forEach(values, function (value, index) {
           definition.push(buildCell(index));
         });
       }
-      definition = 'return [' + definition.join(',') + ']';
+      definition = "return [" + definition.join(",") + "]";
     } else {
       if (cast) {
         if (isArray(cast)) {
-          forEach(values, function(value, index) {
+          forEach(values, function (value, index) {
             if (isString(cast[index])) {
               cast[index] = cast[index].toLowerCase();
             } else {
               deserialize[cast[index]] = cast[index];
             }
-            definition.push('"' + sanitizeString(attrs[index]) + '": deserialize[cast[' + index + ']](' + buildCell(index) + ')');
+            definition.push(
+              '"' +
+                sanitizeString(attrs[index]) +
+                '": deserialize[cast[' +
+                index +
+                "]](" +
+                buildCell(index) +
+                ")"
+            );
           });
         } else {
-          forEach(values, function(value, index) {
-            definition.push('"' + sanitizeString(attrs[index]) + '": ' + castCell(value, index));
+          forEach(values, function (value, index) {
+            definition.push(
+              '"' +
+                sanitizeString(attrs[index]) +
+                '": ' +
+                castCell(value, index)
+            );
           });
         }
       } else {
-        forEach(values, function(value, index) {
-          definition.push('"' + sanitizeString(attrs[index]) + '": ' + buildCell(index));
+        forEach(values, function (value, index) {
+          definition.push(
+            '"' + sanitizeString(attrs[index]) + '": ' + buildCell(index)
+          );
         });
       }
-      definition = 'return {' + definition.join(',') + '}';
+      definition = "return {" + definition.join(",") + "}";
     }
-    return new Function('attrs', 'deserialize', 'cast', definition);
+    return new Function("attrs", "deserialize", "cast", definition);
   }
 
   function detectDelimiter(string, delimiters) {
     var count = 0,
-        detected;
+      detected;
 
-    forEach(delimiters, function(delimiter) {
+    forEach(delimiters, function (delimiter) {
       var needle = delimiter,
-          matches;
+        matches;
       if (ESCAPE_DELIMITERS.indexOf(delimiter) != -1) {
-        needle = '\\' + needle;
+        needle = "\\" + needle;
       }
-      matches = string.match(new RegExp(needle, 'g'));
+      matches = string.match(new RegExp(needle, "g"));
       if (matches && matches.length > count) {
         count = matches.length;
         detected = delimiter;
       }
     });
-    return (detected || delimiters[0]);
+    return detected || delimiters[0];
   }
 
-  var CSV = (function() {
+  var CSV = (function () {
     function CSV(data, options) {
       if (!options) options = {};
 
       if (isArray(data)) {
-        this.mode = 'encode';
+        this.mode = "encode";
       } else if (isString(data)) {
-        this.mode = 'parse';
+        this.mode = "parse";
       } else {
         throw new Error("Incompatible format!");
       }
@@ -149,19 +168,21 @@
 
       this.options = {
         header: fallback(options.header, false),
-        cast: fallback(options.cast, true)
-      }
+        cast: fallback(options.cast, true),
+      };
 
       var lineDelimiter = options.lineDelimiter || options.line,
-          cellDelimiter = options.cellDelimiter || options.delimiter;
+        cellDelimiter = options.cellDelimiter || options.delimiter;
 
       if (this.isParser()) {
-        this.options.lineDelimiter = lineDelimiter || detectDelimiter(this.data, LINE_DELIMITERS);
-        this.options.cellDelimiter = cellDelimiter || detectDelimiter(this.data, CELL_DELIMITERS);
+        this.options.lineDelimiter =
+          lineDelimiter || detectDelimiter(this.data, LINE_DELIMITERS);
+        this.options.cellDelimiter =
+          cellDelimiter || detectDelimiter(this.data, CELL_DELIMITERS);
         this.data = normalizeCSV(this.data, this.options.lineDelimiter);
       } else if (this.isEncoder()) {
-        this.options.lineDelimiter = lineDelimiter || '\r\n';
-        this.options.cellDelimiter = cellDelimiter || ',';
+        this.options.lineDelimiter = lineDelimiter || "\r\n";
+        this.options.cellDelimiter = cellDelimiter || ",";
       }
     }
 
@@ -170,53 +191,57 @@
     }
 
     function normalizeCSV(text, lineDelimiter) {
-      if (text.slice(-lineDelimiter.length) != lineDelimiter) text += lineDelimiter;
+      if (text.slice(-lineDelimiter.length) != lineDelimiter)
+        text += lineDelimiter;
       return text;
     }
 
-    CSV.prototype.set = function(setting, value) {
-      return this.options[setting] = value;
-    }
+    CSV.prototype.set = function (setting, value) {
+      return (this.options[setting] = value);
+    };
 
-    CSV.prototype.isParser = function() {
-      return this.mode == 'parse';
-    }
+    CSV.prototype.isParser = function () {
+      return this.mode == "parse";
+    };
 
-    CSV.prototype.isEncoder = function() {
-      return this.mode == 'encode';
-    }
+    CSV.prototype.isEncoder = function () {
+      return this.mode == "encode";
+    };
 
-    CSV.prototype.parse = function(callback) {
-      if (this.mode != 'parse') return;
-
+    CSV.prototype.parse = function (callback) {
+      if (this.mode != "parse") return;
       if (this.data.trim().length === 0) return [];
 
       var data = this.data,
-          options = this.options,
-          header = options.header,
-          current = { cell: '', line: [] },
-          deserialize = this.deserialize,
-          flag, record, response;
+        options = this.options,
+        header = options.header,
+        current = { cell: "", line: [] },
+        deserialize = this.deserialize,
+        flag,
+        record,
+        response;
 
       if (!callback) {
         response = [];
-        callback = function(record) {
+        callback = function (record) {
           response.push(record);
-        }
+        };
       }
 
       function resetFlags() {
         flag = { escaped: false, quote: false, cell: true };
       }
       function resetCell() {
-        current.cell = '';
+        current.cell = "";
       }
       function resetLine() {
         current.line = [];
       }
 
       function saveCell(cell) {
-        current.line.push(flag.escaped ? cell.slice(1, -1).replace(/""/g, '"') : cell);
+        current.line.push(
+          flag.escaped ? cell.slice(1, -1).replace(/""/g, '"') : cell
+        );
         resetCell();
         resetFlags();
       }
@@ -226,8 +251,15 @@
       function saveLine() {
         if (header) {
           if (isArray(header)) {
-            record = buildConstructor(deserialize, options.cast, current.line, header);
-            saveLine = function() { invoke(callback, record, current.line, deserialize, options.cast); };
+            record = buildConstructor(
+              deserialize,
+              options.cast,
+              current.line,
+              header
+            );
+            saveLine = function () {
+              invoke(callback, record, current.line, deserialize, options.cast);
+            };
             saveLine();
           } else {
             header = current.line;
@@ -236,7 +268,9 @@
           if (!record) {
             record = buildConstructor(deserialize, options.cast, current.line);
           }
-          saveLine = function() { invoke(callback, record, current.line, deserialize, options.cast); };
+          saveLine = function () {
+            invoke(callback, record, current.line, deserialize, options.cast);
+          };
           saveLine();
         }
       }
@@ -244,9 +278,13 @@
       if (options.lineDelimiter.length == 1) saveLastCell = saveCell;
 
       var dataLength = data.length,
-          cellDelimiter = options.cellDelimiter.charCodeAt(0),
-          lineDelimiter = options.lineDelimiter.charCodeAt(options.lineDelimiter.length - 1),
-          _i, _c, _ch;
+        cellDelimiter = options.cellDelimiter.charCodeAt(0),
+        lineDelimiter = options.lineDelimiter.charCodeAt(
+          options.lineDelimiter.length - 1
+        ),
+        _i,
+        _c,
+        _ch;
 
       resetFlags();
 
@@ -273,7 +311,9 @@
           } else if (_ch == lineDelimiter) {
             saveLastCell(current.cell + data.slice(_c, _i));
             _c = _i + 1;
-            saveLine();
+            if (current.line.length > 1 || current.line[0] !== "") {
+              saveLine();
+            }
             resetLine();
           }
         }
@@ -284,81 +324,89 @@
       } else {
         return this;
       }
-    }
+    };
 
     function serializeType(object) {
       if (isArray(object)) {
-        return 'array';
+        return "array";
       } else if (isObject(object)) {
-        return 'object';
+        return "object";
       } else if (isString(object)) {
-        return 'string';
+        return "string";
       } else if (isNull(object)) {
-        return 'null';
+        return "null";
       } else {
-        return 'primitive';
+        return "primitive";
       }
     }
 
     CSV.prototype.deserialize = {
-      "string": function(string) {
+      string: function (string) {
         return String(string);
       },
-      "number": function(number) {
+      number: function (number) {
         return Number(number);
       },
-      "boolean": function(b) {
+      boolean: function (b) {
         return Boolean(b);
-      }
-    }
+      },
+    };
 
     CSV.prototype.serialize = {
-      "object": function(object) {
+      object: function (object) {
         var that = this,
-            attributes = Object.keys(object),
-            serialized = Array(attributes.length);
-        forEach(attributes, function(attr, index) {
+          attributes = Object.keys(object),
+          serialized = Array(attributes.length);
+        forEach(attributes, function (attr, index) {
           serialized[index] = that[serializeType(object[attr])](object[attr]);
         });
         return serialized;
       },
-      "array": function(array) {
+      array: function (array) {
         var that = this,
-            serialized = Array(array.length);
-        forEach(array, function(value, index) {
+          serialized = Array(array.length);
+        forEach(array, function (value, index) {
           serialized[index] = that[serializeType(value)](value);
         });
         return serialized;
       },
-      "string": function(string) {
+      string: function (string) {
         return '"' + String(string).replace(/"/g, '""') + '"';
       },
-      "null": function(value) {
-        return '';
+      null: function (value) {
+        return "";
       },
-      "primitive": function(value) {
+      primitive: function (value) {
         return value;
+      },
+    };
+
+    CSV.prototype.encode = function (callback) {
+      if (this.mode != "encode") return;
+
+      if (this.data.length == 0) return "";
+      var sample;
+      if (isObject(this.data[0])) {
+        var sample = maxBy(this.data, function (row) {
+          return Object.keys(row).length;
+        });
+      } else {
+        sample = this.data[0];
       }
-    }
-
-    CSV.prototype.encode = function(callback) {
-      if (this.mode != 'encode') return;
-
-      if (this.data.length == 0) return '';
 
       var data = this.data,
-          options = this.options,
-          header = options.header,
-          sample = data[0],
-          serialize = this.serialize,
-          offset = 0,
-          attributes, response;
+        options = this.options,
+        header = options.header,
+        serialize = this.serialize,
+        offset = 0,
+        attributes,
+        response;
 
       if (!callback) {
         response = Array(data.length);
-        callback = function(record, index) {
+        callback = function (record, index) {
           response[index + offset] = record;
-        }
+        };
       }
 
       function serializeLine(record) {
@@ -375,12 +423,12 @@
       }
 
       var recordType = serializeType(sample),
-          map;
+        map;
 
-      if (recordType == 'array') {
+      if (recordType == "array") {
         if (isArray(options.cast)) {
           map = Array(options.cast.length);
-          forEach(options.cast, function(type, index) {
+          forEach(options.cast, function (type, index) {
             if (isString(type)) {
               map[index] = type.toLowerCase();
             } else {
@@ -390,22 +438,22 @@
           });
         } else {
           map = Array(sample.length);
-          forEach(sample, function(value, index) {
+          forEach(sample, function (value, index) {
             map[index] = serializeType(value);
           });
         }
-        forEach(data, function(record, recordIndex) {
+        forEach(data, function (record, recordIndex) {
           var serializedRecord = Array(map.length);
-          forEach(record, function(value, valueIndex) {
+          forEach(record, function (value, valueIndex) {
             serializedRecord[valueIndex] = serialize[map[valueIndex]](value);
           });
           callback(serializeLine(serializedRecord), recordIndex);
         });
-      } else if (recordType == 'object') {
+      } else if (recordType == "object") {
         attributes = Object.keys(sample);
         if (isArray(options.cast)) {
           map = Array(options.cast.length);
-          forEach(options.cast, function(type, index) {
+          forEach(options.cast, function (type, index) {
             if (isString(type)) {
               map[index] = type.toLowerCase();
             } else {
@@ -415,14 +463,18 @@
           });
         } else {
           map = Array(attributes.length);
-          forEach(attributes, function(attr, index) {
+          forEach(attributes, function (attr, index) {
             map[index] = serializeType(sample[attr]);
           });
         }
-        forEach(data, function(record, recordIndex) {
+        forEach(data, function (record, recordIndex) {
           var serializedRecord = Array(attributes.length);
-          forEach(attributes, function(attr, attrIndex) {
-            serializedRecord[attrIndex] = serialize[map[attrIndex]](record[attr]);
+          forEach(attributes, function (attr, attrIndex) {
+            if (record[attr] !== undefined) {
+              serializedRecord[attrIndex] = serialize[map[attrIndex]](
+                record[attr]
+              );
+            }
           });
           callback(serializeLine(serializedRecord), recordIndex);
         });
@@ -433,29 +485,59 @@
       } else {
         return this;
       }
-    }
+    };
 
-    CSV.prototype.forEach = function(callback) {
+    CSV.prototype.forEach = function (callback) {
       return this[this.mode](callback);
-    }
+    };
 
     return CSV;
   })();
 
-  CSV.parse = function(data, options) {
+  CSV.parse = function (data, options) {
     return new CSV(data, options).parse();
-  }
+  };
 
-  CSV.encode = function(data, options) {
+  CSV.encode = function (data, options) {
     return new CSV(data, options).encode();
-  }
+  };
 
-  CSV.forEach = function(data, options, callback) {
+  CSV.forEach = function (data, options, callback) {
     if (arguments.length == 2) {
       callback = options;
     }
     return new CSV(data, options).forEach(callback);
-  }
+  };
 
   return CSV;
-}));
+});
+
+function maxBy(array, iteratee) {
+  let result;
+  if (array == null) {
+    return result;
+  }
+  let computed;
+  for (const value of array) {
+    const current = iteratee(value);
+
+    if (
+      current != null &&
+      (computed === undefined
+        ? current === current && !isSymbol(current)
+        : current > computed)
+    ) {
+      computed = current;
+      result = value;
+    }
+  }
+  return result;
+}
+
+function isSymbol(value) {
+  const type = typeof value;
+  return (
+    type == "symbol" ||
+    (type === "object" && value != null && getTag(value) == "[object Symbol]")
+  );
+}
